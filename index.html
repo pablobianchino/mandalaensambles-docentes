@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mandala Docentes</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fbfaf8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=0.1">
+</head>
+<body class="estado-cargando">
+
+    <!-- ===== PANTALLA DE CARGA INICIAL (la misma de Admisión, Festivales y Core) ===== -->
+    <div id="splash-inicial" role="status" aria-live="polite" aria-label="Cargando" style="position:fixed; inset:0; background:#fbfaf8; z-index:2147483600;">
+        <div class="splash-logo">
+            <svg class="splash-anillo" viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="54"/></svg>
+            <img src="logo.png" alt="">
+        </div>
+        <div id="splash-texto" class="splash-texto">Cargando</div>
+        <button type="button" id="splash-reintentar" class="splash-reintentar" style="display:none;">Reintentar</button>
+    </div>
+    <script>
+        (function () {
+            var t0 = Date.now(), lenta = null;
+            var INTERIOR = '<div class="splash-logo"><svg class="splash-anillo" viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="54"/></svg><img src="logo.png" alt=""></div>'
+                + '<div id="splash-texto" class="splash-texto">Cargando</div>'
+                + '<button type="button" id="splash-reintentar" class="splash-reintentar" style="display:none;">Reintentar</button>';
+            function armarTemporizador() {
+                t0 = Date.now();
+                clearTimeout(lenta);
+                var btn = document.getElementById('splash-reintentar');
+                if (btn) btn.onclick = function () { location.reload(); };
+                lenta = setTimeout(function () {
+                    var texto = document.getElementById('splash-texto'), b = document.getElementById('splash-reintentar');
+                    if (texto) texto.textContent = 'Está tardando más de lo normal…';
+                    if (b) b.style.display = 'inline-flex';
+                }, 10000);
+            }
+            armarTemporizador();
+            window.mostrarSplashInicial = function () {
+                var el = document.getElementById('splash-inicial');
+                if (el && !el.getAttribute('data-oculto')) return;
+                if (el && el.parentNode) el.parentNode.removeChild(el);
+                el = document.createElement('div');
+                el.id = 'splash-inicial';
+                el.setAttribute('role', 'status');
+                el.setAttribute('aria-live', 'polite');
+                el.setAttribute('aria-label', 'Cargando');
+                el.style.cssText = 'position:fixed; inset:0; background:#fbfaf8; z-index:2147483600;';
+                el.innerHTML = INTERIOR;
+                document.body.insertBefore(el, document.body.firstChild);
+                armarTemporizador();
+            };
+            window.ocultarSplashInicial = function () {
+                var el = document.getElementById('splash-inicial');
+                if (!el || el.getAttribute('data-oculto')) return;
+                el.setAttribute('data-oculto', '1');
+                clearTimeout(lenta);
+                setTimeout(function () { el.classList.add('out'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400); }, Math.max(0, 600 - (Date.now() - t0)));
+            };
+        })();
+    </script>
+
+    <!-- ===== ÍCONOS DE LÍNEA (mismo estilo que ICONOS_LINEA de Admisión) ===== -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+            <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+            <symbol id="i-swap" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></symbol>
+            <symbol id="i-move" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="M10 15h6m-2-2 2 2-2 2"/></symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+            <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+            <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></symbol>
+            <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+            <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14 9l2 2"/></symbol>
+            <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></symbol>
+            <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+            <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+            <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+            <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+        </defs>
+    </svg>
+
+    <!-- ===== LOGIN Y SIN ACCESO (misma estética que las otras apps) ===== -->
+    <div id="login-container">
+        <div class="login-card" id="login-card-form">
+            <img src="logo.png" alt="Mandala Ensambles" class="login-logo">
+            <h2 class="login-titulo">Mandala Ensambles</h2>
+            <div class="login-subtitulo">Portal Docentes</div>
+
+            <form id="form-login-email" class="login-form" novalidate>
+                <div class="ds-field">
+                    <label for="login-email">Correo electrónico</label>
+                    <input type="email" id="login-email" class="ds-input login-input" autocomplete="username" required placeholder="tu-correo@mandalahouse.com">
+                </div>
+                <div class="ds-field">
+                    <label for="login-password">Contraseña</label>
+                    <div class="login-pass-wrap">
+                        <input type="password" id="login-password" class="ds-input login-input" autocomplete="current-password" required placeholder="••••••••">
+                        <button type="button" id="btn-toggle-login-pass" class="btn-toggle-eye" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña">
+                            <svg class="i"><use href="#i-eye"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="login-error-msg" class="login-error" role="alert" hidden></div>
+                <button type="submit" id="btn-login-email-submit" class="ds-btn ds-btn-primary lg block">Iniciar sesión</button>
+            </form>
+
+            <div class="login-divider"><span>O</span></div>
+
+            <button type="button" id="btn-login-google" class="btn-google-login">
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Continuar con Google
+            </button>
+
+            <div class="login-ayuda">
+                ¿Olvidaste tu contraseña?<br>
+                Contactá al administrador para restablecerla.
+            </div>
+        </div>
+
+        <!-- Sin acceso (igual a la etapa 3 de las otras apps) -->
+        <div class="login-card sin-acceso" id="login-card-sin-acceso" hidden>
+            <div class="sin-acceso-icono"><svg class="i"><use href="#i-lock"/></svg></div>
+            <h3 id="sin-acceso-titulo">No tenés acceso al Portal Docentes</h3>
+            <p id="sin-acceso-texto"></p>
+            <div id="sin-acceso-apps-bloque" hidden>
+                <div class="sin-acceso-apps-titulo">Tenés acceso a:</div>
+                <div class="sin-acceso-apps" id="sin-acceso-apps"></div>
+            </div>
+            <a id="btn-ir-core" class="ds-btn ds-btn-primary lg block" href="#" target="_self">Ir al Portal Central</a>
+            <button type="button" id="btn-sin-acceso-salir" class="ds-btn ds-btn-secondary lg block">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <!-- ===== APP ===== -->
+    <div id="app">
+        <div class="shell">
+            <aside id="sidebar" class="sidebar">
+                <div class="brand">
+                    <img src="logo.png" alt="" class="brand-logo">
+                    <div><h2>Mandala Ensambles</h2><small>Portal Docentes</small></div>
+                </div>
+                <button type="button" id="btn-gestionar" class="btn-side"><svg class="i"><use href="#i-plus"/></svg> Gestionar una clase</button>
+                <ul class="nav" id="nav-lateral">
+                    <li class="nav-item" data-ruta="inicio"><svg class="i"><use href="#i-home"/></svg> <span>Inicio</span></li>
+                    <li class="nav-item" data-ruta="agenda"><svg class="i"><use href="#i-cal"/></svg> <span data-texto-docente="Mi agenda" data-texto-planificador="Agenda de docentes">Mi agenda</span></li>
+                    <li class="nav-sec">Gestiones</li>
+                    <li class="nav-item" data-ruta="suplencias"><svg class="i"><use href="#i-swap"/></svg> <span>Suplencias</span> <span class="badge" data-badge="suplencias" hidden>0</span></li>
+                    <li class="nav-item" data-ruta="recuperos"><svg class="i"><use href="#i-move"/></svg> <span>Recuperos</span> <span class="badge" data-badge="recuperos" hidden>0</span></li>
+                    <li class="nav-item" data-ruta="avisos"><svg class="i"><use href="#i-alert"/></svg> <span>Avisos de festivales</span> <span class="badge red" data-badge="avisos" hidden>0</span></li>
+                    <li class="nav-sec" data-texto-docente="Mis cursos" data-texto-planificador="Cursos">Mis cursos</li>
+                    <li class="nav-item" data-ruta="alumnos"><svg class="i"><use href="#i-users"/></svg> <span data-texto-docente="Mis alumnos y ensambles" data-texto-planificador="Alumnos y ensambles">Mis alumnos y ensambles</span></li>
+                    <li class="nav-item" data-ruta="solicitudes"><svg class="i"><use href="#i-doc"/></svg> <span>Solicitudes de vacantes</span></li>
+                </ul>
+                <div class="side-foot" id="app-version"></div>
+            </aside>
+
+            <div class="main">
+                <!-- WIDGET DE USUARIO (mismo formato que Admisión y Core) -->
+                <div id="user-header-widget-wrapper" class="user-widget-wrapper">
+                    <button type="button" class="user-top-widget" id="user-top-btn" title="Opciones de perfil" aria-haspopup="true" aria-expanded="false" aria-controls="profile-popover">
+                        <span class="user-widget-info">
+                            <span class="widget-user-name" id="widget-user-name">Usuario</span>
+                            <span class="widget-role-badge" id="widget-role-badge"></span>
+                        </span>
+                        <span class="user-avatar-circle" id="widget-user-avatar" aria-hidden="true"></span>
+                    </button>
+                    <div class="google-profile-popover" id="profile-popover" role="menu">
+                        <div class="popover-header">
+                            <div class="popover-avatar-big" id="popover-avatar" aria-hidden="true"></div>
+                            <div class="popover-name" id="popover-name"></div>
+                            <div class="popover-email" id="popover-email"></div>
+                        </div>
+                        <div class="popover-body">
+                            <div class="popover-apps-section" id="popover-vistas-bloque" hidden>
+                                <div class="popover-section-title" id="popover-vistas-titulo">Ver el portal como</div>
+                                <div class="popover-vistas" id="popover-vistas"></div>
+                            </div>
+                            <div class="popover-apps-section">
+                                <div class="popover-section-title">Tus aplicaciones</div>
+                                <div class="popover-apps" id="popover-apps"></div>
+                            </div>
+                            <div class="popover-links">
+                                <button type="button" class="popover-link-item" id="popover-link-cambiar-pass"><svg class="i"><use href="#i-key"/></svg> Cambiar contraseña</button>
+                            </div>
+                        </div>
+                        <div class="popover-footer">
+                            <button type="button" class="btn-popover-logout" id="btn-cerrar-sesion"><svg class="i"><use href="#i-out"/></svg> Cerrar sesión</button>
+                        </div>
+                    </div>
+                </div>
+
+                <main id="vista" class="content" tabindex="-1"></main>
+            </div>
+        </div>
+
+        <!-- Barra inferior (celular) -->
+        <nav class="bnav" id="bnav">
+            <button type="button" data-ruta="inicio"><svg class="i"><use href="#i-home"/></svg>Inicio</button>
+            <button type="button" data-ruta="agenda"><svg class="i"><use href="#i-cal"/></svg>Agenda</button>
+            <button type="button" data-ruta="gestiones"><svg class="i"><use href="#i-swap"/></svg>Gestiones<span class="bd" data-badge="gestiones" hidden>0</span></button>
+            <button type="button" data-ruta="avisos"><svg class="i"><use href="#i-alert"/></svg>Avisos<span class="bd" data-badge="avisos" hidden>0</span></button>
+            <button type="button" data-ruta="mas"><svg class="i"><use href="#i-menu"/></svg>Más</button>
+        </nav>
+    </div>
+
+    <!-- ===== CAMBIO DE CONTRASEÑA (obligatorio con la clave inicial, o voluntario) ===== -->
+    <div class="ds-overlay" id="modal-cambio-clave" hidden>
+        <form class="ds-modal" id="form-cambio-clave" novalidate>
+            <div class="ds-modal-head"><h3 id="titulo-cambio-clave">Cambiá tu contraseña</h3></div>
+            <p class="modal-texto" id="texto-cambio-clave"></p>
+            <div class="ds-field"><label for="clave-actual">Contraseña actual</label><input type="password" id="clave-actual" class="ds-input" autocomplete="current-password"></div>
+            <div class="ds-field"><label for="clave-nueva">Contraseña nueva</label><input type="password" id="clave-nueva" class="ds-input" autocomplete="new-password"></div>
+            <div class="ds-field"><label for="clave-repetir">Repetí la contraseña nueva</label><input type="password" id="clave-repetir" class="ds-input" autocomplete="new-password"></div>
+            <div id="cambio-clave-error" class="login-error" role="alert" hidden></div>
+            <div class="ds-modal-foot">
+                <button type="button" class="ds-btn ds-btn-secondary" id="btn-cambio-clave-salir">Cerrar sesión</button>
+                <button type="submit" class="ds-btn ds-btn-primary" id="btn-cambio-clave-ok">Cambiar contraseña</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Menú "Más" del celular -->
+    <div class="ds-overlay hoja" id="hoja-mas" hidden>
+        <div class="hoja-panel">
+            <button type="button" class="hoja-item" data-ruta="suplencias"><svg class="i"><use href="#i-swap"/></svg> Suplencias</button>
+            <button type="button" class="hoja-item" data-ruta="recuperos"><svg class="i"><use href="#i-move"/></svg> Recuperos</button>
+            <button type="button" class="hoja-item" data-ruta="alumnos"><svg class="i"><use href="#i-users"/></svg> <span data-texto-docente="Mis alumnos y ensambles" data-texto-planificador="Alumnos y ensambles">Mis alumnos y ensambles</span></button>
+            <button type="button" class="hoja-item" data-ruta="solicitudes"><svg class="i"><use href="#i-doc"/></svg> Solicitudes de vacantes</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script type="module" src="src/app.js?v=0.1"></script>
+</body>
+</html>
