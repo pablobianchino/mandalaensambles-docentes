@@ -10,6 +10,7 @@ import {
 } from "./services/acceso.js";
 import { vistasDisponibles, elegirVista, etiquetaRol } from "./services/permisos.js";
 import { SECCIONES, renderInicio, renderProximamente, esc } from "./ui/vistas.js";
+import { renderAgenda } from "./ui/agenda.js";
 
 const RUTAS = Object.keys(SECCIONES);
 
@@ -198,8 +199,9 @@ function aplicarRuta() {
     });
 
     const cont = document.getElementById("vista");
-    const ctx = { perfil: usuarioActual, vista: vistaActual, ruta };
+    const ctx = { perfil: usuarioActual, vista: vistaActual, ruta, toast: mostrarToast };
     if (ruta === "inicio") renderInicio(cont, ctx);
+    else if (ruta === "agenda") renderAgenda(cont, ctx);
     else renderProximamente(cont, ctx);
     cont.scrollTop = 0;
     window.scrollTo(0, 0);
