@@ -340,7 +340,7 @@ function tarjeta(m, ctx, meCubren = false) {
             <b>${esc(m.clase.titulo)}</b>
             <div class="lin">${icono("i-clock", "sm")} ${hhmm(ini)} a ${hhmm(fin)} · ${esPlanif || meCubren ? `${esc(m.docente.nombre)} → ` : "Le pediste a "}<b class="inl">${esc(m.suplente.nombre)}</b></div>
             <div class="lin">${estadoChip}${esPlanif ? `<span class="tenue">Pedida por ${esc(m.pedidaPor?.nombre || "")}${m.enNombreDe ? ` en nombre de ${esc(primerNombre(m.docente.nombre))}` : ""}</span>` : ""}</div>
-            ${ult ? `<div class="linea-tiempo">${esc(ult.texto)} · ${new Date(ult.fecha).toLocaleString("es-AR", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}${intentos}</div>` : ""}
+            ${ult ? `<div class="linea-tiempo">${esc(ult.texto)} · ${new Date(ult.fecha).toLocaleString("es-AR", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}${intentos}</div>` : ""}
         </div>
         <div class="acc">${acciones}</div>
     </div></div>`;
