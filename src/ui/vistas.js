@@ -5,7 +5,7 @@
 // =======================================================================
 
 import { esc } from "./util.js";
-import { clasesDeHoy, filaClase } from "./agenda.js";
+import { clasesDeHoy, filaClase, enlazarAcciones } from "./agenda.js";
 export { esc };
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -24,7 +24,7 @@ function icono(id, cls = "") {
 export const SECCIONES = {
     inicio: { icono: "i-home" },
     agenda: { icono: "i-cal", docente: "Mi agenda", planificador: "Agenda de docentes" },
-    suplencias: { icono: "i-swap", docente: "Suplencias", planificador: "Suplencias", etapa: 4, texto: "Pedís que otro docente tome una clase, copiás el mensaje y confirmás cuando acepte." },
+    suplencias: { icono: "i-swap", docente: "Suplencias", planificador: "Suplencias" },
     recuperos: { icono: "i-move", docente: "Recuperos", planificador: "Recuperos", etapa: 5, texto: "Buscás horarios libres de la escuela para recuperar una clase y enviás las opciones a los alumnos." },
     avisos: { icono: "i-alert", docente: "Avisos de festivales", planificador: "Avisos de festivales", etapa: 6, texto: "Clases que caen el día de un festival en el que estás asignado, para resolverlas con una suplencia o un recupero." },
     alumnos: { icono: "i-users", docente: "Mis alumnos y ensambles", planificador: "Alumnos y ensambles", etapa: 7, texto: "Tus grupos, ensambles y alumnos individuales (hoy en Admisión)." },
@@ -62,9 +62,9 @@ async function cargarClasesDeHoy(cont, perfil) {
     num.classList.remove("vacio");
     det.textContent = proximas.length ? `Próxima: ${String(proximas[0].inicio.getHours()).padStart(2, "0")}:${String(proximas[0].inicio.getMinutes()).padStart(2, "0")}` : (r.clases.length ? "Ya terminaron todas" : "Hoy no tenés clases");
     lista.innerHTML = r.clases.length
-        ? r.clases.map(c => filaClase(c, { corto: true })).join("")
+        ? r.clases.map(c => filaClase(c, { corto: true, docente: r.docente })).join("")
         : `<div class="ds-empty"><b>Hoy no tenés clases</b>Mirá otros días en Mi agenda.</div>`;
-    lista.querySelectorAll("[data-accion]").forEach(b => b.onclick = () => { location.hash = "#agenda"; });
+    enlazarAcciones(lista);
 }
 
 /* ---------------------------------------------------------------- INICIO */
@@ -90,11 +90,11 @@ export function renderInicio(cont, { perfil, vista }) {
         <div class="aviso info">
             ${icono("i-tool")}
             <div><b>Portal en construcción</b>
-            <p>Ya funcionan el ingreso y la agenda (solo para ver tus clases). Las suplencias, recuperos y avisos se van sumando en las próximas versiones.</p></div>
+            <p>Ya funcionan la agenda y las suplencias. Los recuperos y los avisos de festivales se suman en las próximas versiones.</p></div>
         </div>
         <div class="kpis">
             ${kpi("teal", "i-cal", "Clases hoy", "agenda", esPlanif ? "Mirá la Agenda de docentes" : "De tu calendario", esPlanif ? "" : "kpi-hoy")}
-            ${kpi("warn", "i-swap", "Suplencias", "suplencias", "Pendientes de confirmar")}
+            ${kpi("warn", "i-swap", "Suplencias", "suplencias", "Pendientes de confirmar", "kpi-sup")}
             ${kpi("warn", "i-move", "Recuperos", "recuperos", "Esperando a los alumnos")}
             ${kpi("bad", "i-alert", "Avisos", "avisos", "Clases sin resolver")}
         </div>
