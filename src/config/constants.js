@@ -4,7 +4,7 @@
 // y los ?v= de index.html. Registro en CAMBIOS_docentes.md.
 // =======================================================================
 
-export const APP_VERSION = "v0.4";
+export const APP_VERSION = "v0.5";
 
 /* Mismo proyecto de Firebase que Core, Admisión y Festivales */
 export const FIREBASE_CONFIG = {
