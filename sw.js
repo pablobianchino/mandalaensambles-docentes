@@ -4,7 +4,7 @@
    Cambiar CACHE_NAME en cada versión (igual que APP_VERSION).
    ================================================================ */
 
-const CACHE_NAME = 'mdl-docentes-v0.1';
+const CACHE_NAME = 'mdl-docentes-v0.2';
 
 const ASSETS = [
     './',
@@ -15,7 +15,11 @@ const ASSETS = [
     './src/config/firebase.js',
     './src/services/acceso.js',
     './src/services/permisos.js',
+    './src/services/calendario.js',
+    './src/services/docentes.js',
     './src/ui/vistas.js',
+    './src/ui/agenda.js',
+    './src/ui/util.js',
     './logo.png',
     './manifest.json'
 ];
