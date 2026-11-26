@@ -223,6 +223,107 @@ body.estado-app #app { display: block; }
 .proximamente b { display: block; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
 
 /* ================================================================
+   v0.2 – MI AGENDA (mockup_02_mi_agenda.html)
+   ================================================================ */
+.lbl-mini { font-size: 12px; font-weight: 800; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; }
+/* Selector de docente del planificador (mockup_02b, opción C) */
+.doc-sel { position: relative; }
+.btn-doc { display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 12px 0 8px; border-radius: 10px; border: 1px solid var(--line-2); background: #fff; font: 700 14px var(--font); color: var(--ink); cursor: pointer; box-shadow: var(--sh-1); }
+.btn-doc:hover, .btn-doc[aria-expanded="true"] { border-color: var(--teal); }
+.btn-doc .mini { width: 28px; height: 28px; border-radius: 50%; background: var(--teal-50); color: var(--teal-700); display: grid; place-items: center; }
+.btn-doc .mini .dot { width: 12px; height: 12px; }
+.btn-doc svg.i { color: var(--ink-3); }
+.btn-doc .mini svg.i { color: var(--teal-700); width: 16px; height: 16px; }
+.menu-doc { position: absolute; right: 0; top: 48px; width: 300px; max-height: 380px; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sh-3); padding: 8px; z-index: 50; }
+.menu-doc .ds-input { margin-bottom: 6px; }
+.md-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: 0; background: none; border-radius: 8px; cursor: pointer; font: 600 13.5px var(--font); color: var(--ink); text-align: left; }
+.md-item:hover { background: var(--surface-2); }
+.md-item.on { background: var(--teal-50); color: var(--teal-700); font-weight: 800; }
+.md-item svg.i { width: 16px; height: 16px; }
+.md-item .r { margin-left: auto; font-size: 12px; color: var(--ink-3); font-weight: 700; }
+.md-sep { height: 1px; background: var(--line); margin: 4px 6px; }
+.md-vacio { padding: 10px; color: var(--ink-3); font-size: 13px; text-align: center; }
+
+.datebar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 10px 12px; box-shadow: var(--sh-1); margin-bottom: 12px; }
+.datebar .sep { flex: 1; }
+.datebar .ds-select { width: auto; }
+.nav-dia { display: flex; align-items: center; gap: 4px; }
+.icon-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line-2); background: #fff; display: grid; place-items: center; cursor: pointer; color: var(--ink-2); flex: none; }
+.icon-btn:hover { background: var(--surface-2); }
+.icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.semana-titulo { font-size: 16px; font-weight: 800; padding: 0 8px; min-width: 230px; text-align: center; }
+.semana-titulo small { display: block; font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.date-wrap { position: relative; display: inline-flex; align-items: center; }
+.date-wrap .ds-input { width: 150px; }
+.date-wrap .solo-cel { display: none; }
+.ag-horas { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.ag-horas .ds-input { width: 110px; }
+
+.semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 16px; }
+.dia { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 6px; text-align: center; cursor: pointer; font-family: inherit; color: inherit; display: flex; flex-direction: column; align-items: center; }
+.dia:hover { border-color: var(--teal-100); }
+.dia:disabled { opacity: .4; cursor: not-allowed; }
+.dia .dn { font-size: 12px; font-weight: 800; color: var(--ink-3); text-transform: uppercase; }
+.dia .dd { font-size: 18px; font-weight: 800; margin: 2px 0; }
+.dia .dc { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.dia .dots { display: flex; justify-content: center; gap: 3px; height: 6px; margin-top: 4px; }
+.dia .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); display: block; }
+.dia.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.dia.on .dn, .dia.on .dc { color: #d6f0f3; }
+.dia.on .dots i { background: #9fd3db; }
+.dia.hoy:not(.on) { border-color: var(--teal); }
+.dia.vacio .dd { color: var(--ink-3); }
+
+.clase { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.clase:last-child { border-bottom: 0; }
+.clase .hora { width: 64px; flex: none; font-weight: 800; font-size: 15px; }
+.clase .hora small { display: block; font-weight: 600; font-size: 12px; color: var(--ink-3); }
+.clase .cuerpo { flex: 1; min-width: 0; }
+.clase .tit { font-size: 14.5px; font-weight: 700; word-break: break-word; }
+.clase .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 5px; }
+.clase .acc { display: flex; gap: 6px; flex: none; align-items: center; }
+.clase.pasada { opacity: .6; }
+.clase.anulada .tit, .clase.anulada .hora { color: var(--ink-3); }
+.clase.anulada .tit { text-decoration: line-through; }
+.pie-lista { padding: 10px 16px; font-size: 12.5px; color: var(--ink-3); font-weight: 600; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 6px; }
+.ahora { position: relative; height: 0; }
+.ahora::before { content: ''; position: absolute; left: 16px; right: 16px; top: 0; border-top: 2px solid var(--bad); }
+.ahora span { position: absolute; left: 16px; top: -9px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; }
+.vacio-box { text-align: center; padding: 48px 16px; color: var(--ink-3); }
+.vacio-box b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.vacio-box svg { width: 34px; height: 34px; color: var(--ink-3); margin-bottom: 8px; }
+.skel { height: 62px; margin: 12px 16px; border-radius: 10px; background: linear-gradient(90deg, #f3efe8 25%, #faf8f3 50%, #f3efe8 75%); background-size: 200% 100%; animation: sk 1.2s infinite; }
+.skel.ultimo { margin-bottom: 16px; }
+@keyframes sk { to { background-position: -200% 0; } }
+.aviso.bad { background: var(--bad-bg); border-color: #f0cfc7; }
+.aviso.bad svg, .aviso.bad b { color: var(--bad); }
+.aviso.bad p { color: #7a2c1d; }
+
+.grid-plan { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.grupo-doc { border-bottom: 1px solid var(--line); }
+.grupo-doc:last-child { border-bottom: 0; }
+.grupo-doc summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; background: var(--surface-2); }
+.grupo-doc summary::-webkit-details-marker { display: none; }
+.grupo-doc summary b { font-size: 14.5px; }
+.grupo-doc summary .cnt { color: var(--ink-3); font-weight: 600; font-size: 12.5px; }
+.grupo-doc summary .der { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.chev { transition: transform .15s; color: var(--ink-3); }
+.grupo-doc[open] .chev { transform: rotate(180deg); }
+.ocup { padding: 12px 16px 16px; }
+.ocup-head, .ocup-fila { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 6px; align-items: center; }
+.ocup-head { font-size: 12px; font-weight: 800; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.ocup-fila { margin-bottom: 4px; font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.barra { height: 14px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); display: flex; overflow: hidden; }
+.barra i { flex: 1; border-right: 1px solid #fff; }
+.barra i.o { background: var(--teal-100); }
+.barra i.f { background: var(--bad); opacity: .75; }
+.barra.bat i.o { background: #e7dcf3; }
+.leyenda { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.leyenda i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* ================================================================
    VENTANAS, HOJA DEL CELULAR Y AVISOS
    ================================================================ */
 .ds-overlay { position: fixed; inset: 0; background: rgba(28,31,34,.38); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -244,7 +345,7 @@ body.estado-app #app { display: block; }
    CELULAR Y TABLET
    ================================================================ */
 @media (max-width: 1100px) {
-    .grid2 { grid-template-columns: 1fr; }
+    .grid2, .grid-plan { grid-template-columns: 1fr; }
     .kpis { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 850px) {
@@ -256,6 +357,23 @@ body.estado-app #app { display: block; }
     .widget-user-name { display: none; }
     .google-profile-popover { width: calc(100vw - 30px); max-width: 320px; }
     .kpi .n { font-size: 24px; }
+    /* Agenda en celular */
+    .datebar { padding: 8px; gap: 6px; }
+    .nav-dia { flex: 1 1 100%; }
+    .semana-titulo { min-width: 0; flex: 1; font-size: 14px; }
+    .date-wrap .solo-cel { display: block; width: 34px; height: 34px; padding: 7px; border: 1px solid var(--line-2); border-radius: 8px; color: var(--ink-2); }
+    .date-wrap .ds-input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+    .datebar .sep, .solo-desk { display: none; }
+    .datebar .ds-select { flex: 1; }
+    .semana { gap: 4px; }
+    .dia { padding: 6px 2px; }
+    .dia .dd { font-size: 15px; }
+    .dia .dc { display: none; }
+    .clase { flex-wrap: wrap; padding: 12px; }
+    .clase .acc { width: 100%; padding-left: 78px; }
+    .doc-sel, .btn-doc { width: 100%; }
+    .btn-doc #ag-doclbl { flex: 1; text-align: left; }
+    .menu-doc { left: 0; right: 0; width: auto; }
     .bnav { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; height: 64px; background: #fff; border-top: 1px solid var(--line); z-index: 800; }
     .bnav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: 700 11.5px var(--font); color: var(--ink-3); background: none; border: 0; position: relative; cursor: pointer; }
     .bnav button.on { color: var(--teal); }
