@@ -10,7 +10,9 @@ import {
 } from "./services/acceso.js";
 import { vistasDisponibles, elegirVista, etiquetaRol } from "./services/permisos.js";
 import { SECCIONES, renderInicio, renderProximamente, esc } from "./ui/vistas.js";
-import { renderAgenda } from "./ui/agenda.js";
+import { renderAgenda, refrescarAgenda } from "./ui/agenda.js";
+import { configurarSuplencias, renderSuplencias, pendientesParaContador, cerrarVentana as cerrarVentanaSuplencia } from "./ui/suplencias.js";
+import { escucharSuplencias } from "./services/suplencias.js";
 
 const RUTAS = Object.keys(SECCIONES);
 
@@ -78,6 +80,8 @@ async function manejarCambioSesion(user) {
     aplicarTextosDeVista();
     mostrarFormularioLogin();
     mostrarEstado("app");
+    configurarSuplencias({ get perfil() { return usuarioActual; }, get vista() { return vistaActual; }, toast: mostrarToast, refrescar: refrescarAgenda });
+    escucharSuplencias(actualizarContadores);
     aplicarRuta();
     ocultarSplash();
 
@@ -202,9 +206,25 @@ function aplicarRuta() {
     const ctx = { perfil: usuarioActual, vista: vistaActual, ruta, toast: mostrarToast };
     if (ruta === "inicio") renderInicio(cont, ctx);
     else if (ruta === "agenda") renderAgenda(cont, ctx);
+    else if (ruta === "suplencias") renderSuplencias(cont, ctx);
     else renderProximamente(cont, ctx);
+    actualizarContadores();
     cont.scrollTop = 0;
     window.scrollTo(0, 0);
+}
+
+/* Contadores del menú (suplencias pendientes) y la tarjeta de Inicio */
+function actualizarContadores() {
+    if (!usuarioActual) return;
+    const n = pendientesParaContador(usuarioActual, vistaActual);
+    document.querySelectorAll('[data-badge="suplencias"], [data-badge="gestiones"]').forEach(b => { b.textContent = String(n); b.hidden = n === 0; });
+    const k = document.getElementById("kpi-sup");
+    if (k) {
+        k.textContent = String(n);
+        k.classList.remove("vacio");
+        const d = document.getElementById("kpi-sup-d");
+        if (d) d.textContent = n ? (vistaActual === "planificador" ? "Esperando respuesta" : "Esperando tu confirmación") : "Ninguna pendiente";
+    }
 }
 
 /* ================================================================ EVENTOS */
@@ -301,6 +321,7 @@ function abrirVentana(id) { document.getElementById(id).hidden = false; }
 function cerrarVentana(id) { const el = document.getElementById(id); if (el) el.hidden = true; }
 function cerrarVentanas() {
     abrirPopover(false);
+    cerrarVentanaSuplencia();
     ["modal-cambio-clave", "hoja-mas"].forEach(cerrarVentana);
 }
 
