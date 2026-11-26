@@ -4,7 +4,7 @@
 // y los ?v= de index.html. Registro en CAMBIOS_docentes.md.
 // =======================================================================
 
-export const APP_VERSION = "v0.3";
+export const APP_VERSION = "v0.4";
 
 /* Mismo proyecto de Firebase que Core, Admisión y Festivales */
 export const FIREBASE_CONFIG = {
@@ -36,7 +36,8 @@ export const EMAIL_CUENTA_EMERGENCIA = "productora.mandalahouse@gmail.com";
 export const COLLECTIONS = {
     USUARIOS_SISTEMA: "usuarios_sistema",
     PROFESORES: "profesores",
-    CONFIGURACION: "configuracion"   // doc "general": aulas, baterías, ícono de batería, calendario general (lo edita Admisión)
+    CONFIGURACION: "configuracion",  // doc "general": aulas, baterías, ícono de batería, calendario general (lo edita Admisión); doc "docentes": plantillas de mensajes
+    MOVIMIENTOS: "docentes_movimientos" // v0.4: suplencias (y después recuperos)
 };
 
 /* Script de Google "API Calendario Mandala Ensambles" (el mismo de Admisión y Festivales).
