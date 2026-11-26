@@ -4,7 +4,7 @@
    Cambiar CACHE_NAME en cada versión (igual que APP_VERSION).
    ================================================================ */
 
-const CACHE_NAME = 'mdl-docentes-v0.2';
+const CACHE_NAME = 'mdl-docentes-v0.3';
 
 const ASSETS = [
     './',
