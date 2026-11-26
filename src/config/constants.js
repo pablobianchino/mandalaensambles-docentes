@@ -4,7 +4,7 @@
 // y los ?v= de index.html. Registro en CAMBIOS_docentes.md.
 // =======================================================================
 
-export const APP_VERSION = "v0.1";
+export const APP_VERSION = "v0.2";
 
 /* Mismo proyecto de Firebase que Core, Admisión y Festivales */
 export const FIREBASE_CONFIG = {
@@ -35,8 +35,28 @@ export const EMAIL_CUENTA_EMERGENCIA = "productora.mandalahouse@gmail.com";
 
 export const COLLECTIONS = {
     USUARIOS_SISTEMA: "usuarios_sistema",
-    PROFESORES: "profesores"
+    PROFESORES: "profesores",
+    CONFIGURACION: "configuracion"   // doc "general": aulas, baterías, ícono de batería, calendario general (lo edita Admisión)
 };
+
+/* Script de Google "API Calendario Mandala Ensambles" (el mismo de Admisión y Festivales).
+   v0.2 solo usa getEvents (lectura). */
+export const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx033Es_BuZJk5x0MmyV-u8foA58ENNl1K3Cv-BE6ZeguXCG62UIQl5H4v94EB7MT0/exec";
+export const SCRIPT_API_KEY = "mandala-seg-2026";
+
+/* Valores por defecto si configuracion/general no los tiene (mismos que Admisión) */
+export const CONFIG_DEFECTO = {
+    calendario_por_defecto: EMAIL_CUENTA_EMERGENCIA,
+    cantidad_aulas: 3,
+    cantidad_baterias: 2,
+    identificador_bateria: "🥁"
+};
+
+/* Calendarios que no cuentan para la ocupación de aulas (mismo criterio que Admisión: calExcluidos) */
+export const CALENDARIOS_EXCLUIDOS_AULAS = ["pablobianchino@gmail.com"];
+
+/* Límite para navegar hacia adelante: un año desde hoy (decisión 6.2 del plan) */
+export const DIAS_LIMITE_ADELANTE = 365;
 
 /* Preferencia "Ver el portal como" (planificador que además es docente) */
 export const CLAVE_VISTA_GUARDADA = "mdl_docentes_vista";
