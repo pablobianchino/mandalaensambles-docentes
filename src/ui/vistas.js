@@ -4,12 +4,12 @@
 // Los datos reales (calendario, gestiones, avisos) llegan en las etapas 3 a 7 del plan.
 // =======================================================================
 
+import { esc } from "./util.js";
+import { clasesDeHoy, filaClase } from "./agenda.js";
+export { esc };
+
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-
-export function esc(t) {
-    return String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
 
 function fechaLarga(d = new Date()) {
     const dia = DIAS[d.getDay()];
@@ -23,7 +23,7 @@ function icono(id, cls = "") {
 /* Secciones del menú: título según la vista y etapa del plan en la que se habilitan */
 export const SECCIONES = {
     inicio: { icono: "i-home" },
-    agenda: { icono: "i-cal", docente: "Mi agenda", planificador: "Agenda de docentes", etapa: 3, texto: "Elegís un día y ves las clases de tu calendario de Google, con las acciones Buscar suplente y Recuperar." },
+    agenda: { icono: "i-cal", docente: "Mi agenda", planificador: "Agenda de docentes" },
     suplencias: { icono: "i-swap", docente: "Suplencias", planificador: "Suplencias", etapa: 4, texto: "Pedís que otro docente tome una clase, copiás el mensaje y confirmás cuando acepte." },
     recuperos: { icono: "i-move", docente: "Recuperos", planificador: "Recuperos", etapa: 5, texto: "Buscás horarios libres de la escuela para recuperar una clase y enviás las opciones a los alumnos." },
     avisos: { icono: "i-alert", docente: "Avisos de festivales", planificador: "Avisos de festivales", etapa: 6, texto: "Clases que caen el día de un festival en el que estás asignado, para resolverlas con una suplencia o un recupero." },
@@ -36,12 +36,35 @@ export function tituloSeccion(ruta, vista) {
     return s ? (s[vista] || s.docente || "") : "";
 }
 
-function kpi(clase, iconoId, etiqueta, ruta, detalle) {
+function kpi(clase, iconoId, etiqueta, ruta, detalle, id = "") {
     return `<button type="button" class="kpi ${clase}" data-ir="${ruta}">
         <div class="lb">${icono(iconoId, "sm")} ${esc(etiqueta)}</div>
-        <div class="n vacio">—</div>
-        <div class="d">${esc(detalle)}</div>
+        <div class="n vacio" ${id ? `id="${id}"` : ""}>—</div>
+        <div class="d" ${id ? `id="${id}-d"` : ""}>${esc(detalle)}</div>
     </button>`;
+}
+
+/* Clases de hoy del docente (Inicio): número de la tarjeta y lista */
+async function cargarClasesDeHoy(cont, perfil) {
+    const lista = cont.querySelector("#inicio-clases");
+    const num = cont.querySelector("#kpi-hoy");
+    const det = cont.querySelector("#kpi-hoy-d");
+    let r;
+    try { r = await clasesDeHoy(perfil); } catch (e) { r = { error: e.message, clases: [] }; }
+    if (!lista || !lista.isConnected) return;
+    if (r.sinCalendario || r.error) {
+        lista.innerHTML = `<div class="ds-empty"><b>${r.sinCalendario ? "Sin calendario cargado" : "No se pudo leer tu calendario"}</b>${r.sinCalendario ? "Pedile a Coordinación que lo cargue en Admisión." : "Abrí Mi agenda para reintentar."}</div>`;
+        return;
+    }
+    const ahora = new Date();
+    const proximas = r.clases.filter(c => c.fin > ahora);
+    num.textContent = String(r.clases.length);
+    num.classList.remove("vacio");
+    det.textContent = proximas.length ? `Próxima: ${String(proximas[0].inicio.getHours()).padStart(2, "0")}:${String(proximas[0].inicio.getMinutes()).padStart(2, "0")}` : (r.clases.length ? "Ya terminaron todas" : "Hoy no tenés clases");
+    lista.innerHTML = r.clases.length
+        ? r.clases.map(c => filaClase(c, { corto: true })).join("")
+        : `<div class="ds-empty"><b>Hoy no tenés clases</b>Mirá otros días en Mi agenda.</div>`;
+    lista.querySelectorAll("[data-accion]").forEach(b => b.onclick = () => { location.hash = "#agenda"; });
 }
 
 /* ---------------------------------------------------------------- INICIO */
@@ -67,18 +90,22 @@ export function renderInicio(cont, { perfil, vista }) {
         <div class="aviso info">
             ${icono("i-tool")}
             <div><b>Portal en construcción</b>
-            <p>Esta es la primera versión: ya funcionan el ingreso y el menú. Las clases, suplencias, recuperos y avisos se van sumando en las próximas versiones.</p></div>
+            <p>Ya funcionan el ingreso y la agenda (solo para ver tus clases). Las suplencias, recuperos y avisos se van sumando en las próximas versiones.</p></div>
         </div>
         <div class="kpis">
-            ${kpi("teal", "i-cal", "Clases hoy", "agenda", esPlanif ? "De todos los docentes" : "De tu calendario")}
+            ${kpi("teal", "i-cal", "Clases hoy", "agenda", esPlanif ? "Mirá la Agenda de docentes" : "De tu calendario", esPlanif ? "" : "kpi-hoy")}
             ${kpi("warn", "i-swap", "Suplencias", "suplencias", "Pendientes de confirmar")}
             ${kpi("warn", "i-move", "Recuperos", "recuperos", "Esperando a los alumnos")}
             ${kpi("bad", "i-alert", "Avisos", "avisos", "Clases sin resolver")}
         </div>
         <div class="grid2">
             <div class="card">
-                <div class="card-head"><h3>${icono("i-cal")} ${esPlanif ? "Clases que chocan con festivales" : "Tus clases de hoy"}</h3></div>
-                <div class="ds-empty"><b>Disponible pronto</b>${esPlanif ? "Acá vas a ver las clases de los docentes que caen el día de un festival." : "Acá vas a ver las clases de hoy de tu calendario de Google."}</div>
+                <div class="card-head"><h3>${icono("i-cal")} ${esPlanif ? "Clases que chocan con festivales" : "Tus clases de hoy"}</h3>${esPlanif ? "" : `<button type="button" class="ds-btn ds-btn-ghost sm" data-ir="agenda">Ver otro día</button>`}</div>
+                ${esPlanif
+                    ? `<div class="ds-empty"><b>Disponible pronto</b>Acá vas a ver las clases de los docentes que caen el día de un festival.</div>`
+                    : (perfil.profesorId
+                        ? `<div id="inicio-clases"><div class="skel"></div><div class="skel ultimo"></div></div>`
+                        : `<div class="ds-empty"><b>Sin perfil docente vinculado</b>No se puede leer tu calendario.</div>`)}
             </div>
             <div class="col">
                 <div class="card">
@@ -91,6 +118,7 @@ export function renderInicio(cont, { perfil, vista }) {
                 </div>
             </div>
         </div>`;
+    if (!esPlanif && perfil.profesorId) cargarClasesDeHoy(cont, perfil);
 }
 
 /* ---------------------------------------------------------------- SECCIÓN EN PREPARACIÓN */
