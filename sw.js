@@ -4,7 +4,7 @@
    Cambiar CACHE_NAME en cada versión (igual que APP_VERSION).
    ================================================================ */
 
-const CACHE_NAME = 'mdl-docentes-v0.5';
+const CACHE_NAME = 'mdl-docentes-v0.6';
 
 const ASSETS = [
     './',
@@ -18,6 +18,7 @@ const ASSETS = [
     './src/services/calendario.js',
     './src/services/docentes.js',
     './src/services/suplencias.js',
+    './src/services/pase.js',
     './src/ui/vistas.js',
     './src/ui/agenda.js',
     './src/ui/util.js',
