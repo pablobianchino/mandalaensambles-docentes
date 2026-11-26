@@ -106,13 +106,23 @@ export async function renderAgenda(cont, ctx) {
     ctxActual = ctx;
     if (!estado.sel) estado.sel = hoy0();
     const esPlanif = ctx.vista === "planificador";
+    const miId = ctx.perfil.profesorId || "";
     const miTurno = ++turno;
+
+    // v0.3: el docente también puede mirar a los demás (arranca en sus clases); el planificador arranca en todos
+    if (estado.vistaDe !== ctx.vista) {
+        estado.vistaDe = ctx.vista;
+        estado.ver = esPlanif ? "todos" : (miId || "todos");
+    }
+    const viendoLoMio = !esPlanif && estado.ver === miId && !!miId;
 
     cont.innerHTML = `
         <div class="page-head">
-            <div><h1>${esPlanif ? "Agenda de docentes" : "Mi agenda"}</h1>
-            <p id="ag-subtitulo">${esPlanif ? "Clases de los calendarios de los docentes. Podés gestionar cualquiera en nombre del docente." : "Clases de tu calendario de Google. Elegí una para pedir una suplencia o recuperarla."}</p></div>
-            ${esPlanif ? `
+            <div><h1>${esPlanif ? "Agenda de docentes" : (viendoLoMio ? "Mi agenda" : "Agenda de la escuela")}</h1>
+            <p id="ag-subtitulo">${esPlanif
+                ? "Clases de los calendarios de los docentes. Podés gestionar cualquiera en nombre del docente."
+                : (viendoLoMio ? "Clases de tu calendario de Google. Elegí una para pedir una suplencia o recuperarla."
+                               : "Clases de todos los docentes y ocupación de la escuela. Solo podés gestionar tus propias clases.")}</p></div>
             <div class="doc-sel" id="ag-docsel">
                 <button type="button" class="btn-doc" id="ag-docbtn" aria-haspopup="listbox" aria-expanded="false">
                     <span class="mini" id="ag-docmini">${icono("i-users")}</span><span id="ag-doclbl">Todos los docentes</span>${icono("i-chev")}
@@ -121,7 +131,7 @@ export async function renderAgenda(cont, ctx) {
                     <input type="search" class="ds-input" id="ag-docbuscar" placeholder="Buscar docente…" autocomplete="off">
                     <div id="ag-doclista" role="listbox"></div>
                 </div>
-            </div>` : ""}
+            </div>
         </div>
         <div id="ag-nav"></div>
         <div id="ag-cuerpo"><div class="card"><div class="skel"></div><div class="skel"></div><div class="skel ultimo"></div></div></div>`;
@@ -131,32 +141,34 @@ export async function renderAgenda(cont, ctx) {
     // ---- A quién se mira
     let objetivos = []; // [{profesorId, nombre, calendario, color}]
     let docentes = [];
-    if (esPlanif) {
-        try { docentes = await listarDocentes(); } catch (e) { console.warn("[Agenda] No se pudo leer la lista de docentes:", e.code || e); }
-        if (miTurno !== turno) return;
-        if (estado.ver !== "todos" && !docentes.some(d => d.profesorId === estado.ver)) estado.ver = "todos";
-        pintarSelector(cont, docentes, null);
-        objetivos = estado.ver === "todos" ? docentes : docentes.filter(d => d.profesorId === estado.ver);
-        if (estado.ver !== "todos" && objetivos[0]) {
-            cont.querySelector("#ag-subtitulo").innerHTML = `Viendo la agenda de <b>${esc(objetivos[0].nombre)}</b>. Lo que gestiones queda registrado como pedido por vos en nombre de ${esc(objetivos[0].nombre)}.`;
-        }
-    } else {
-        const cal = await calendarioDeProfesor(ctx.perfil.profesorId);
-        objetivos = [{ profesorId: ctx.perfil.profesorId, nombre: ctx.perfil.nombre, calendario: cal, color: "#007b8f" }];
+    try { docentes = await listarDocentes(); } catch (e) { console.warn("[Agenda] No se pudo leer la lista de docentes:", e.code || e); }
+    if (miTurno !== turno) return;
+    // El docente siempre está en la lista, aunque su ficha no cumpla el filtro del planificador
+    if (!esPlanif && miId && !docentes.some(d => d.profesorId === miId)) {
+        const cal = await calendarioDeProfesor(miId);
+        docentes = [{ profesorId: miId, nombre: ctx.perfil.nombre, email: ctx.perfil.email, calendario: cal, color: "#007b8f" }, ...docentes];
     }
     if (miTurno !== turno) return;
+    if (estado.ver !== "todos" && !docentes.some(d => d.profesorId === estado.ver)) estado.ver = "todos";
+    pintarSelector(cont, docentes, null, { esPlanif, miId });
+    objetivos = estado.ver === "todos" ? docentes : docentes.filter(d => d.profesorId === estado.ver);
+    if (estado.ver !== "todos" && objetivos[0] && objetivos[0].profesorId !== miId) {
+        cont.querySelector("#ag-subtitulo").innerHTML = esPlanif
+            ? `Viendo la agenda de <b>${esc(objetivos[0].nombre)}</b>. Lo que gestiones queda registrado como pedido por vos en nombre de ${esc(objetivos[0].nombre)}.`
+            : `Estás viendo la agenda de <b>${esc(objetivos[0].nombre)}</b>. Solo podés gestionar tus propias clases.`;
+    }
 
-    const todos = esPlanif && estado.ver === "todos";
+    const todos = estado.ver === "todos";
     pintarNav(cont, null, todos);
 
-    // ---- Docente sin calendario
-    if (!esPlanif && !objetivos[0].calendario) {
+    // ---- Docente sin calendario (mirando sus propias clases)
+    if (viendoLoMio && !objetivos[0]?.calendario) {
         cont.querySelector("#ag-cuerpo").innerHTML = `
             <div class="aviso">${icono("i-alert")}<div><b>${ctx.perfil.profesorId ? "Tu perfil docente no tiene un calendario cargado" : "Tu usuario no tiene un perfil docente vinculado"}</b>
             <p>Pedile a Coordinación que lo complete en Admisión (Configuración → Usuarios → Perfil docente).</p></div></div>`;
         return;
     }
-    if (esPlanif && objetivos.length === 0) {
+    if (objetivos.length === 0) {
         cont.querySelector("#ag-cuerpo").innerHTML = `<div class="card"><div class="ds-empty"><b>No hay docentes para mostrar</b>No se encontraron docentes activos con perfil docente vinculado.</div></div>`;
         return;
     }
@@ -168,38 +180,42 @@ export async function renderAgenda(cont, ctx) {
     const semanas = await semanasDe([...new Set(calendarios)], lun, config);
     if (miTurno !== turno) return;
 
-    pintarNav(cont, { objetivos, semanas }, todos);
-    pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif });
+    pintarNav(cont, { objetivos, semanas, miId }, todos);
+    pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif, miId });
 
-    // Selector del planificador: clases de la semana de cada docente (las que ya se leyeron)
-    if (esPlanif) {
-        const conteos = {};
-        docentes.forEach(dc => {
-            const s = estado.cache.get(`${dc.calendario}|${diaISO(lun)}`);
-            if (s && !s.error) conteos[dc.profesorId] = s.clases.length;
-        });
-        pintarSelector(cont, docentes, conteos);
-    }
+    // Selector: clases de la semana de cada docente (las que ya se leyeron)
+    const conteos = {};
+    docentes.forEach(dc => {
+        const s = estado.cache.get(`${dc.calendario}|${diaISO(lun)}`);
+        if (s && !s.error) conteos[dc.profesorId] = s.clases.length;
+    });
+    pintarSelector(cont, docentes, conteos, { esPlanif, miId });
 }
 
-/* ---------------------------------------------------------------- selector de docente (opción C, 26/11/2026) */
-function pintarSelector(cont, docentes, conteos) {
+/* ---------------------------------------------------------------- selector de docente (opción C, 26/11/2026)
+   Planificador: "Todos los docentes" y cada docente.
+   Docente (v0.3): "Mis clases" primero, después "Todos los docentes" y los demás docentes. */
+function pintarSelector(cont, docentes, conteos, { esPlanif = true, miId = "" } = {}) {
     const btn = cont.querySelector("#ag-docbtn");
     if (!btn) return;
     const menu = cont.querySelector("#ag-docmenu");
     const lista = cont.querySelector("#ag-doclista");
     const buscar = cont.querySelector("#ag-docbuscar");
     const elegido = docentes.find(d => d.profesorId === estado.ver);
+    const esMio = (d) => !esPlanif && miId && d.profesorId === miId;
 
-    cont.querySelector("#ag-doclbl").textContent = elegido ? elegido.nombre : "Todos los docentes";
+    cont.querySelector("#ag-doclbl").textContent = elegido ? (esMio(elegido) ? "Mis clases" : elegido.nombre) : "Todos los docentes";
     cont.querySelector("#ag-docmini").innerHTML = elegido ? `<span class="dot" style="background:${elegido.color}"></span>` : icono("i-users");
 
     const total = conteos ? Object.values(conteos).reduce((a, b) => a + b, 0) : null;
     const item = (valor, html, n) => `<button type="button" class="md-item ${estado.ver === valor ? "on" : ""}" role="option" data-v="${esc(valor)}">${html}<span class="r">${n == null ? "" : n}</span></button>`;
+    const mio = docentes.find(esMio);
     const pintarLista = (q = "") => {
         const qn = q.trim().toLowerCase();
-        const filtrados = docentes.filter(d => !qn || d.nombre.toLowerCase().includes(qn));
-        lista.innerHTML =
+        const filtrados = docentes.filter(d => !esMio(d) && (!qn || d.nombre.toLowerCase().includes(qn)));
+        const itemMio = mio && (!qn || "mis clases".includes(qn) || mio.nombre.toLowerCase().includes(qn))
+            ? item(mio.profesorId, `<span class="dot" style="background:${mio.color}"></span>Mis clases`, conteos ? conteos[mio.profesorId] : null) : "";
+        lista.innerHTML = itemMio +
             (qn ? "" : item("todos", `${icono("i-users")} Todos los docentes`, total) + `<div class="md-sep"></div>`) +
             (filtrados.length
                 ? filtrados.map(d => item(d.profesorId, `<span class="dot" style="background:${d.color}"></span>${esc(d.nombre)}`, conteos ? (conteos[d.profesorId] ?? (d.calendario ? null : "—")) : null)).join("")
@@ -339,12 +355,15 @@ function hace(d) {
     return min < 1 ? "recién" : `hace ${min} min`;
 }
 
-function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif }) {
+function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif, miId = "" }) {
     if (config) configUltima = config;
     config = configUltima;
     const cuerpo = cont.querySelector("#ag-cuerpo");
     if (!cuerpo) return;
     const d = estado.sel;
+    // v0.3: el planificador gestiona todo; el docente solo sus propias clases
+    const puede = (o) => esPlanif || (!!miId && o.profesorId === miId);
+    const esMio = (o) => !esPlanif && !!miId && o.profesorId === miId;
 
     if (!todos) {
         // ---- Un solo calendario (docente, o planificador con un docente elegido)
@@ -355,7 +374,7 @@ function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif }) {
         }
         const s = semanas[o.calendario] || { clases: [], ocultos: 0 };
         if (s.error) {
-            cuerpo.innerHTML = `<div class="aviso bad">${icono("i-alert")}<div><b>No se pudo leer ${esPlanif ? `el calendario de ${esc(o.nombre)}` : "tu calendario de Google"}</b>
+            cuerpo.innerHTML = `<div class="aviso bad">${icono("i-alert")}<div><b>No se pudo leer ${esMio(o) ? "tu calendario de Google" : `el calendario de ${esc(o.nombre)}`}</b>
                 <p>Puede ser un problema de conexión o que el calendario no esté compartido con la escuela. Reintentá; si sigue, avisale a Coordinación.</p></div>
                 <button type="button" class="ds-btn ds-btn-secondary sm" id="ag-reintentar">Reintentar</button></div>`;
             cuerpo.querySelector("#ag-reintentar").onclick = () => cont.querySelector("#ag-releer").click();
@@ -368,10 +387,10 @@ function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif }) {
         cuerpo.innerHTML = `
             <div class="card">
                 <div class="card-head">
-                    <h3>${esPlanif ? `<span class="dot" style="background:${o.color}"></span> ${esc(o.nombre)} · ` : icono("i-cal")} ${tituloDia(d)} · ${clases.length ? plural(clases.length, "clase", "clases") : "sin clases"}</h3>
-                    <span class="sub">${esc(o.calendario)} · leído ${hace(s.leidoEn)}</span>
+                    <h3>${esMio(o) ? icono("i-cal") : `<span class="dot" style="background:${o.color}"></span> ${esc(o.nombre)} · `} ${tituloDia(d)} · ${clases.length ? plural(clases.length, "clase", "clases") : "sin clases"}</h3>
+                    <span class="sub">${puede(o) ? `${esc(o.calendario)} · ` : ""}leído ${hace(s.leidoEn)}</span>
                 </div>
-                ${clases.length ? listaConAhora(clases, {}) : `<div class="vacio-box">${icono("i-coffee")}<b>${esPlanif ? "No tiene clases este día" : "No tenés clases este día"}</b>${ocultos ? "Probá con otro horario." : "Probá con otro día de la semana o elegí una fecha."}</div>`}
+                ${clases.length ? listaConAhora(clases, { conAcciones: puede(o) }) : `<div class="vacio-box">${icono("i-coffee")}<b>${esMio(o) ? "No tenés clases este día" : "No tiene clases este día"}</b>${ocultos ? "Probá con otro horario." : "Probá con otro día de la semana o elegí una fecha."}</div>`}
                 ${filtrados}${todoDia}
             </div>`;
         enlazarAcciones(cuerpo);
@@ -390,17 +409,18 @@ function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif }) {
     const conError = grupos.filter(g => g.s && g.s.error).length;
 
     const htmlGrupos = grupos
-        .sort((a, b) => (b.clases.length > 0) - (a.clases.length > 0) || a.o.nombre.localeCompare(b.o.nombre, "es"))
+        // El docente ve su grupo primero; después, los que tienen clases
+        .sort((a, b) => (esMio(b.o) - esMio(a.o)) || (b.clases.length > 0) - (a.clases.length > 0) || a.o.nombre.localeCompare(b.o.nombre, "es"))
         .map((g, i) => {
             let der = "";
             if (!g.o.calendario) der = `<span class="ds-chip">Sin calendario cargado</span>`;
             else if (g.s && g.s.error) der = `<span class="ds-chip bad">Calendario no disponible</span>`;
             return `
-            <details class="grupo-doc" ${i === 0 && g.clases.length ? "open" : ""}>
-                <summary><span class="dot" style="background:${g.o.color}"></span><b>${esc(g.o.nombre)}</b>
+            <details class="grupo-doc ${esMio(g.o) ? "mio" : ""}" ${(i === 0 && g.clases.length) || (esMio(g.o) && g.clases.length) ? "open" : ""}>
+                <summary><span class="dot" style="background:${g.o.color}"></span><b>${esc(g.o.nombre)}</b>${esMio(g.o) ? `<span class="ds-chip teal">Vos</span>` : ""}
                 <span class="cnt">${g.clases.length ? plural(g.clases.length, "clase", "clases") : "Sin clases"}</span>
                 <span class="der">${der}${icono("i-chev", "chev")}</span></summary>
-                ${g.clases.length ? listaConAhora(g.clases, { corto: true }) : ""}
+                ${g.clases.length ? listaConAhora(g.clases, { corto: true, conAcciones: puede(g.o) }) : ""}
             </details>`;
         }).join("");
 
