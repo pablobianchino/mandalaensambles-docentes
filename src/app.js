@@ -13,6 +13,8 @@ import { SECCIONES, renderInicio, renderProximamente, esc } from "./ui/vistas.js
 import { renderAgenda, refrescarAgenda } from "./ui/agenda.js";
 import { configurarSuplencias, renderSuplencias, pendientesParaContador, cerrarVentana as cerrarVentanaSuplencia } from "./ui/suplencias.js";
 import { escucharSuplencias } from "./services/suplencias.js";
+import { usarPaseDeCore } from "./services/pase.js";
+import { auth } from "./config/firebase.js";
 
 const RUTAS = Object.keys(SECCIONES);
 
@@ -21,10 +23,13 @@ let vistaActual = "docente"; // 'docente' | 'planificador'
 let cambioClaveForzado = false;
 
 /* ================================================================ ARRANQUE */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("app-version").textContent = APP_VERSION;
     document.getElementById("btn-ir-core").href = URL_PORTAL_CORE;
     bindEventos();
+    // v0.6 (etapa 4 de Core): primero el pase de un solo uso (borra #pase= de la dirección), después la sesión y la ruta
+    const resultadoPase = await usarPaseDeCore(auth, "docentes");
+    if (resultadoPase.error) console.warn("[Docentes] Pase de Core:", resultadoPase.error);
     window.addEventListener("hashchange", aplicarRuta);
     registrarServiceWorker();
     alCambiarSesion(manejarCambioSesion);
