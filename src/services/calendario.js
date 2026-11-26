@@ -49,6 +49,38 @@ async function pedirAlScript(payload) {
     throw ultimoError || new Error("No se pudo consultar Google Calendar.");
 }
 
+/* ---------------------------------------------------------------- escrituras (v0.4)
+   Solo las usa el flujo de suplencias y recuperos, siempre después de que la persona confirma. */
+
+/* Renombra SOLO la clase de ese día (script v4: renombrarClaseDelDia) */
+export async function renombrarClaseDelDia(calendarioId, eventId, inicio, nuevoTitulo) {
+    return pedirAlScript({ action: "renombrarClaseDelDia", calendarId: calendarioId, eventId, inicio: inicio.toISOString(), nuevoTitulo });
+}
+
+/* Mueve SOLO la clase de ese día (script v4: moverClaseDelDia) */
+export async function moverClaseDelDia(calendarioId, eventId, inicio, nuevoInicio, nuevoFin) {
+    return pedirAlScript({ action: "moverClaseDelDia", calendarId: calendarioId, eventId, inicio: inicio.toISOString(), nuevoInicio: nuevoInicio.toISOString(), nuevoFin: nuevoFin.toISOString() });
+}
+
+/* Crea un evento suelto (acción existente createEvent) → { id } */
+export async function crearEvento(calendarioId, titulo, inicio, fin, descripcion = "") {
+    return pedirAlScript({ action: "createEvent", calendarId: calendarioId, summary: titulo, start: { dateTime: isoLocal(inicio) }, end: { dateTime: isoLocal(fin) }, description: descripcion });
+}
+
+/* Borra un evento suelto por id (acción existente deleteEvent). No usar con series. */
+export async function eliminarEvento(calendarioId, eventId) {
+    return pedirAlScript({ action: "deleteEvent", calendarId: calendarioId, eventId });
+}
+
+/* ¿El script publicado ya es la versión 4? (getEvents devuelve `recurrente`) */
+export async function scriptEsV4(calendarioId) {
+    const ahora = new Date(), fin = new Date(ahora.getTime() + 14 * 864e5);
+    const datos = await pedirAlScript({ action: "getEvents", calendarId: calendarioId, timeMin: isoLocal(ahora), timeMax: isoLocal(fin) });
+    const items = Array.isArray(datos && datos.items) ? datos.items : [];
+    if (!items.length) return null; // no se puede saber
+    return typeof items[0].recurrente === "boolean";
+}
+
 /* Fecha local → ISO con zona horaria (como lo arma Admisión) */
 export function isoLocal(d) {
     const tzo = -d.getTimezoneOffset(), dif = tzo >= 0 ? "+" : "-", p = n => (n < 10 ? "0" : "") + n;
