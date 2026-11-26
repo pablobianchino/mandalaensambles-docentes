@@ -9,6 +9,11 @@ import { leerEventos, diaISO } from "../services/calendario.js";
 import { leerConfiguracion, calendarioDeProfesor, listarDocentes } from "../services/docentes.js";
 import { CALENDARIOS_EXCLUIDOS_AULAS, DIAS_LIMITE_ADELANTE } from "../config/constants.js";
 import { esc } from "./util.js";
+import { suplenciaDeClase, suplenciasActuales } from "../services/suplencias.js";
+import { abrirBuscarSuplente, abrirConfirmar } from "./suplencias.js";
+
+/* Clases pintadas en pantalla, para que los botones sepan de qué clase y de qué docente se trata */
+const enPantalla = new Map(); // clave → { clase, docente }
 
 const DN = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const DL = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -315,24 +320,37 @@ function pintarNav(cont, datos, todos) {
 
 /* ---------------------------------------------------------------- lista del día */
 let configUltima = null;
-function filaClase(c, { conAcciones = true, corto = false } = {}) {
+function filaClase(c, { conAcciones = true, corto = false, docente = null } = {}) {
     const ahora = new Date();
     const paso = c.fin < ahora;
+    const sup = suplenciaDeClase(c);
     const chips = [];
     if (c.recurrente === true) chips.push(`<span class="ds-chip">${icono("i-repeat", "sm")} Serie semanal</span>`);
     if (c.recurrente === false) chips.push(`<span class="ds-chip">${icono("i-one", "sm")} Evento único</span>`);
     if (c.bateria) chips.push(`<span class="ds-chip vio">${icono("i-drum", "sm")} Batería</span>`);
+    if (sup && sup.estado === "pendiente") chips.push(`<span class="ds-chip warn">Suplencia pendiente · ${esc(String(sup.suplente.nombre).split(" ")[0])}</span>`);
+    if (sup && sup.estado === "confirmada") chips.push(`<span class="ds-chip ok">Suplencia confirmada · la da ${esc(String(sup.suplente.nombre).split(" ")[0])}</span>`);
+    if (!sup && /^suplencia de /i.test(c.titulo)) chips.push(`<span class="ds-chip info">${icono("i-swap", "sm")} Suplencia</span>`);
     if (paso) chips.push(`<span class="ds-chip">Ya pasó</span>`);
-    const acciones = conAcciones ? `
+    const clave = c.clave;
+    if (docente) enPantalla.set(clave, { clase: c, docente });
+    let acciones = "";
+    if (conAcciones && sup) {
+        acciones = `<div class="acc">${sup.estado === "pendiente" && !paso
+            ? `<button type="button" class="ds-btn ds-btn-primary sm" data-accion="aceptó" data-mov="${esc(sup.id)}">Aceptó</button>` : ""}
+            <button type="button" class="ds-btn ds-btn-secondary sm" data-accion="gestion">Ver gestión</button></div>`;
+    } else if (conAcciones && !c.anulada) {
+        acciones = `
         <div class="acc">
-            ${paso ? "" : `<button type="button" class="ds-btn ds-btn-secondary sm" data-accion="suplente">${icono("i-swap", "sm")} ${corto ? "Suplente" : "Buscar suplente"}</button>`}
-            <button type="button" class="ds-btn ds-btn-secondary sm" data-accion="recuperar">${icono("i-move", "sm")} Recuperar</button>
-        </div>` : "";
+            ${paso ? "" : `<button type="button" class="ds-btn ds-btn-secondary sm" data-accion="suplente" data-clave="${esc(clave)}">${icono("i-swap", "sm")} ${corto ? "Suplente" : "Buscar suplente"}</button>`}
+            <button type="button" class="ds-btn ds-btn-secondary sm" data-accion="recuperar" data-clave="${esc(clave)}">${icono("i-move", "sm")} Recuperar</button>
+        </div>`;
+    }
     return `
-        <div class="clase ${paso ? "pasada" : ""} ${c.anulada ? "anulada" : ""}">
+        <div class="clase ${paso ? "pasada" : ""} ${c.anulada ? "anulada" : ""} ${sup && sup.estado === "pendiente" ? "gestion" : ""}">
             <div class="hora">${hhmm(c.inicio)}<small>${c.duracionMin} min</small></div>
             <div class="cuerpo"><div class="tit">${esc(c.titulo)}</div>${chips.length ? `<div class="meta">${chips.join("")}</div>` : ""}</div>
-            ${c.anulada ? "" : acciones}
+            ${acciones}
         </div>`;
 }
 
@@ -390,7 +408,7 @@ function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif, miId 
                     <h3>${esMio(o) ? icono("i-cal") : `<span class="dot" style="background:${o.color}"></span> ${esc(o.nombre)} · `} ${tituloDia(d)} · ${clases.length ? plural(clases.length, "clase", "clases") : "sin clases"}</h3>
                     <span class="sub">${puede(o) ? `${esc(o.calendario)} · ` : ""}leído ${hace(s.leidoEn)}</span>
                 </div>
-                ${clases.length ? listaConAhora(clases, { conAcciones: puede(o) }) : `<div class="vacio-box">${icono("i-coffee")}<b>${esMio(o) ? "No tenés clases este día" : "No tiene clases este día"}</b>${ocultos ? "Probá con otro horario." : "Probá con otro día de la semana o elegí una fecha."}</div>`}
+                ${clases.length ? listaConAhora(clases, { conAcciones: puede(o), docente: o }) : `<div class="vacio-box">${icono("i-coffee")}<b>${esMio(o) ? "No tenés clases este día" : "No tiene clases este día"}</b>${ocultos ? "Probá con otro horario." : "Probá con otro día de la semana o elegí una fecha."}</div>`}
                 ${filtrados}${todoDia}
             </div>`;
         enlazarAcciones(cuerpo);
@@ -420,7 +438,7 @@ function pintarCuerpo(cont, { objetivos, semanas, config, todos, esPlanif, miId 
                 <summary><span class="dot" style="background:${g.o.color}"></span><b>${esc(g.o.nombre)}</b>${esMio(g.o) ? `<span class="ds-chip teal">Vos</span>` : ""}
                 <span class="cnt">${g.clases.length ? plural(g.clases.length, "clase", "clases") : "Sin clases"}</span>
                 <span class="der">${der}${icono("i-chev", "chev")}</span></summary>
-                ${g.clases.length ? listaConAhora(g.clases, { corto: true, conAcciones: puede(g.o) }) : ""}
+                ${g.clases.length ? listaConAhora(g.clases, { corto: true, conAcciones: puede(g.o), docente: g.o }) : ""}
             </details>`;
         }).join("");
 
@@ -445,6 +463,7 @@ function panelOcupacion(semanas, d, config) {
     Object.entries(semanas).forEach(([cal, s]) => {
         if (excluidos.has(cal) || !s || s.error) return;
         delDia(s.clases, d).forEach(c => {
+            if (c.anulada) return; // v0.4: una clase con ❌ (suplencia confirmada) ya no ocupa aula; la ocupa la del suplente
             const k = `${c.titulo}|${c.inicio.getTime()}|${c.fin.getTime()}`; // el mismo evento invitado en dos calendarios cuenta una vez
             if (vistos.has(k)) return;
             vistos.add(k);
@@ -480,13 +499,28 @@ function panelOcupacion(semanas, d, config) {
         </div>`;
 }
 
-function enlazarAcciones(cuerpo) {
+export function enlazarAcciones(cuerpo) {
     cuerpo.querySelectorAll("[data-accion]").forEach(b => b.onclick = () => {
-        const msg = b.dataset.accion === "suplente"
-            ? "Buscar suplente se habilita en la próxima versión."
-            : "Recuperar se habilita en una próxima versión.";
-        if (ctxActual && typeof ctxActual.toast === "function") ctxActual.toast(msg);
+        const acc = b.dataset.accion;
+        const reg = b.dataset.clave ? enPantalla.get(b.dataset.clave) : null;
+        if (acc === "suplente" && reg) return abrirBuscarSuplente({ clase: reg.clase, docente: reg.docente });
+        if (acc === "gestion") { location.hash = "#suplencias"; return; }
+        if (acc === "aceptó") {
+            const m = suplenciasActuales().find(x => x.id === b.dataset.mov);
+            if (m) abrirConfirmar(m);
+            return;
+        }
+        if (acc === "recuperar" && ctxActual && typeof ctxActual.toast === "function") ctxActual.toast("Recuperar se habilita en una próxima versión.");
     });
+}
+
+/* Después de una suplencia: vuelve a leer la semana visible y repinta la agenda (si está abierta) */
+export function refrescarAgenda() {
+    if (!estado.sel) return;
+    const l = diaISO(lunesDe(estado.sel));
+    [...estado.cache.keys()].filter(k => k.endsWith(`|${l}`)).forEach(k => estado.cache.delete(k));
+    const cont = document.getElementById("vista");
+    if (location.hash === "#agenda" && cont && ctxActual) renderAgenda(cont, ctxActual);
 }
 
 /* ---------------------------------------------------------------- para Inicio */
@@ -496,7 +530,7 @@ export async function clasesDeHoy(perfil) {
     if (!cal) return { sinCalendario: true, clases: [] };
     const s = await semanaDe(cal, lunesDe(new Date()), config);
     if (s.error) return { error: s.error, clases: [] };
-    return { clases: delDia(s.clases, new Date()), calendario: cal };
+    return { clases: delDia(s.clases, new Date()), calendario: cal, docente: { profesorId: perfil.profesorId, nombre: perfil.nombre, email: perfil.email, calendario: cal } };
 }
 
 export { filaClase };
